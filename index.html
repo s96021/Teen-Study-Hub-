@@ -1,0 +1,984 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Teen Study Hub — Final</title>
+<style>
+  :root{
+    /* Default theme variables (overwritten by JS on load) */
+    --bg:#fdf6fb;
+    --panel-bg:#fff9fb;
+    --accent-color:#ff8fb3;
+    --button-color:#ffccdf;
+    --pastel-pink:#ffd7e6;
+    --pastel-blue:#d7eefc;
+    --blue-strong:#9fd2ff;
+    --muted:#6e6068;
+    --text:#332f33;
+    --card-shadow:0 10px 30px rgba(0,0,0,0.06);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background:var(--bg);
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+  }
+
+  header{ text-align:center; padding:18px 12px 8px;}
+  header h1{ margin:0; color:var(--accent-color); font-size:26px}
+  .subtitle{ color:var(--muted); margin-top:6px }
+
+  /* Theme button & toast */
+  #themeBtn{
+    position:fixed;
+    top:12px;
+    right:16px;
+    z-index:9999;
+    background:transparent;
+    border:1px solid rgba(0,0,0,0.06);
+    padding:8px 10px;
+    border-radius:10px;
+    cursor:pointer;
+    font-weight:800;
+  }
+  #themeToast{
+    position:fixed;
+    top:60px;
+    right:18px;
+    background:rgba(0,0,0,0.8);
+    color:#fff;
+    padding:8px 12px;
+    border-radius:8px;
+    opacity:0;
+    transform:translateY(-6px);
+    transition:all .28s ease;
+    z-index:9999;
+    pointer-events:none;
+  }
+
+  /* Top timers panel */
+  .top-panel {
+    max-width:1000px;
+    margin:18px auto;
+    background:linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0.9));
+    border-radius:14px;
+    padding:18px;
+    box-shadow: var(--card-shadow);
+    display:flex;
+    gap:18px;
+    align-items:center;
+    justify-content:center;
+    flex-wrap:wrap;
+  }
+
+  .timer-card{
+    background:linear-gradient(180deg, rgba(255,255,255,0.98), #fff);
+    border-radius:12px;
+    padding:16px;
+    width:360px;
+    text-align:center;
+    border:1px solid rgba(0,0,0,0.04);
+  }
+  .timer-title{ font-weight:800; color:var(--muted); font-size:13px; margin-bottom:6px }
+  .timer-large{ font-size:56px; font-weight:800; color:var(--accent-color); letter-spacing:1px }
+  .subject-timer-large{ font-size:44px; color:var(--blue-strong) }
+
+  .controls{ margin-top:12px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap}
+  button.btn{
+    background:var(--button-color);
+    border:none;
+    padding:8px 12px;
+    border-radius:10px;
+    cursor:pointer;
+    font-weight:700;
+    color:var(--text);
+  }
+  button.small{ padding:6px 10px; font-size:13px }
+  button.ghost{ background:transparent; border:1px solid rgba(0,0,0,0.05) }
+
+  /* Bottom action buttons */
+  .action-btn{
+    position:fixed;
+    bottom:18px;
+    width:92px;
+    height:92px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 14px 40px rgba(0,0,0,0.08);
+    font-weight:800;
+    cursor:pointer;
+    border:none;
+  }
+  #todoBtn{
+    left:18px;
+    background:linear-gradient(180deg, var(--blue-strong), var(--pastel-blue));
+    color:#fff;
+  }
+  #taskHubBtn{
+    right:18px;
+    background:linear-gradient(180deg, var(--accent-color), var(--button-color));
+    color:#fff;
+  }
+
+  /* To-Do "page" */
+  #todoPage {
+    position:fixed;
+    inset:80px 18px 120px 18px;
+    background:linear-gradient(180deg, rgba(235,250,ff,0.95), rgba(245,255,ff,0.95));
+    border-radius:12px;
+    box-shadow:var(--card-shadow);
+    padding:18px;
+    display:none;
+    overflow:auto;
+    z-index: 999;
+  }
+  #todoPage h2{ margin:0 0 8px 0; color:var(--blue-strong) }
+  .todo-form{ display:flex; gap:8px; margin-bottom:10px }
+  .todo-form input[type="text"]{ flex:1; padding:8px; border-radius:8px; border:1px solid rgba(0,0,0,0.06) }
+  .todo-list{ display:flex; flex-direction:column; gap:8px; margin-top:6px; }
+  .todo-item{
+    background:#fff; border-radius:10px; padding:10px; display:flex; gap:8px; align-items:center;
+    border:1px solid rgba(0,0,0,0.04);
+  }
+  .todo-item .title{ font-weight:700 }
+  .todo-item .meta{ font-size:12px; color:var(--muted) }
+
+  /* Task Hub Panel (right) */
+  #hubPanel{
+    position:fixed;
+    right:18px;
+    bottom:126px;
+    width:760px;
+    max-width:calc(100% - 36px);
+    height:72vh;
+    min-height:420px;
+    background:linear-gradient(180deg, rgba(255,250,250,0.95), rgba(255,245,247,0.95));
+    border-radius:14px;
+    box-shadow:var(--card-shadow);
+    border:1px solid rgba(255,140,170,0.06);
+    display:none;
+    overflow:hidden;
+  }
+  .hub-header{ display:flex; gap:10px; padding:12px; align-items:center; border-bottom:1px solid rgba(0,0,0,0.03) }
+  .hub-tabs{ display:flex; gap:8px }
+  .hub-tab{ padding:8px 12px; border-radius:10px; cursor:pointer; font-weight:800 }
+  .hub-tab.active{ background:var(--button-color); color:#fff }
+  .hub-close{ margin-left:auto; background:transparent; border:none; font-size:18px; cursor:pointer }
+
+  .hub-body{ display:flex; height:calc(100% - 58px) }
+  .left-col{ flex:1.4; padding:14px; border-right:1px solid rgba(0,0,0,0.03); overflow:auto }
+  .right-col{ flex:0.9; padding:14px; overflow:auto }
+
+  /* Calendar */
+  .cal-nav{ display:flex; align-items:center; gap:8px; margin-bottom:10px }
+  .cal-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px }
+  .cal-day{ background:transparent; border-radius:10px; padding:8px; min-height:84px; border:1px dashed rgba(255,140,170,0.05); position:relative; font-size:13px }
+  .cal-day.inactive{ opacity:0.35 }
+  .date-num{ font-weight:800; color:var(--accent-color) }
+  .dot-row{ position:absolute; bottom:8px; left:8px; right:8px; display:flex; gap:8px }
+  .dot{ width:12px; height:12px; border-radius:50%; box-shadow:0 2px 6px rgba(0,0,0,0.06); border:1px solid rgba(255,255,255,0.6) }
+  .dot.personal{ background:var(--pastel-pink) }
+  .dot.task{ background:var(--pastel-blue) }
+
+  .events-list{ margin-top:12px }
+  .event-item{ background:#fff; padding:8px; border-radius:8px; border:1px solid rgba(0,0,0,0.04); margin-bottom:8px }
+
+  /* Resources */
+  .resources .subject{ margin-bottom:8px }
+  .grade-row{ display:flex; gap:6px; flex-wrap:wrap; margin-top:6px }
+  .grade-btn{ padding:8px 10px; border-radius:8px; border:none; cursor:pointer; background:var(--pastel-pink); font-weight:700 }
+
+  /* Custom Theme Panel */
+  #customPanel {
+    position:fixed;
+    top:80px;
+    right:18px;
+    width:320px;
+    background:linear-gradient(180deg, #fff, #fff);
+    border-radius:12px;
+    padding:12px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.12);
+    display:none;
+    z-index:10000;
+  }
+  #customPanel h3{ margin:0 0 8px 0; font-size:16px }
+  .color-row{ display:flex; gap:8px; align-items:center; margin-bottom:8px }
+  .color-row label{ width:100px; font-weight:700; font-size:13px }
+  .color-row input[type="color"]{ width:56px; height:34px; border-radius:6px; border:none; padding:0 }
+
+  /* small screens */
+  @media (max-width:900px){
+    #hubPanel{ right:10px; left:10px; width:auto; }
+    #todoPage{ left:10px; right:10px; top:100px; bottom:120px; }
+    .top-panel{ margin:12px; padding:12px }
+    .timer-card{ width:100% }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎀 Teen Study Hub</h1>
+  <div class="subtitle">Timers • Pastel Calendar • Separate To‑Do Page • Study Resources (7–12)</div>
+</header>
+
+<!-- Theme Button & Toast -->
+<button id="themeBtn" title="Cycle themes">🎨 Theme</button>
+<div id="themeToast" role="status" aria-live="polite"></div>
+
+<!-- Custom Color Panel (auto opens when Custom theme selected) -->
+<div id="customPanel" aria-hidden="true">
+  <h3>Customize Colors</h3>
+  <div class="color-row"><label>Background</label><input id="customBg" type="color"></div>
+  <div class="color-row"><label>Text</label><input id="customText" type="color"></div>
+  <div class="color-row"><label>Button</label><input id="customBtn" type="color"></div>
+  <div class="color-row"><label>Accent</label><input id="customAccent" type="color"></div>
+  <div style="display:flex; gap:8px; margin-top:8px">
+    <button id="saveCustom" class="btn small">Save</button>
+    <button id="cancelCustom" class="ghost small">Close</button>
+  </div>
+  <div style="font-size:12px; color:var(--muted); margin-top:8px">Your custom palette is saved locally.</div>
+</div>
+
+<!-- TOP TIMERS PANEL -->
+<section id="mainHub" class="top-panel" aria-label="Timers panel">
+  <!-- Main Pomodoro -->
+  <div class="timer-card" aria-live="polite">
+    <div class="timer-title">Pomodoro</div>
+    <div id="mainTimer" class="timer-large">25:00</div>
+    <div id="phaseLabel" style="font-size:13px; color:var(--muted); margin-top:6px">Study</div>
+    <div class="controls">
+      <button id="mainToggle" class="btn">Start</button>
+      <button class="btn small" id="mainReset">Reset</button>
+      <button class="btn small ghost" id="mainPreset">25/5</button>
+    </div>
+  </div>
+
+  <!-- Subject timers -->
+  <div class="timer-card">
+    <div class="timer-title">Subject Timer</div>
+    <div id="subjectTimer" class="subject-timer-large">30:00</div>
+    <div style="font-size:13px; color:var(--muted); margin-top:6px">Click a subject to start</div>
+    <div class="controls" style="margin-top:12px">
+      <button class="btn" onclick="startSubjectTimer(45*60)">Math</button>
+      <button class="btn" onclick="startSubjectTimer(45*60)">Science</button>
+      <button class="btn" onclick="startSubjectTimer(30*60)">ELA</button>
+      <button class="btn" onclick="startSubjectTimer(30*60)">History</button>
+      <button class="btn small ghost" id="subjectReset">Reset</button>
+    </div>
+  </div>
+</section>
+
+<!-- Left To-Do button -->
+<button id="todoBtn" class="action-btn" title="Open To-Do">
+  ✅<div style="font-size:10px; margin-left:6px">To-Do</div>
+</button>
+
+<!-- Right Task Hub button -->
+<button id="taskHubBtn" class="action-btn" title="Open Task Hub">
+  📅<div style="font-size:10px; margin-left:6px">Hub</div>
+</button>
+
+<!-- To-Do Page (separate page view) -->
+<div id="todoPage" role="dialog" aria-label="To-Do Page">
+  <button id="backToHub" class="btn small" style="float:right">Return to Study Hub</button>
+  <h2>✅ To-Do List</h2>
+  <div style="color:var(--muted); margin-bottom:8px">Add tasks, set optional due date. Due tasks show on calendar (blue dots).</div>
+
+  <div class="todo-form">
+    <input id="todoText" type="text" placeholder="New task (required)" aria-label="task text" />
+    <input id="todoDue" type="date" aria-label="due date" />
+    <button onclick="addTodo()" class="btn">Add</button>
+  </div>
+
+  <div style="font-weight:800; margin-bottom:8px">Tasks</div>
+  <div id="todoList" class="todo-list" aria-live="polite"></div>
+
+  <div style="margin-top:12px; font-size:13px; color:var(--muted)">
+    Tips: Click checkbox to mark complete (removes task). Use the date to place tasks onto the calendar.
+  </div>
+</div>
+
+<!-- Task Hub Panel (Right) -->
+<div id="hubPanel" role="dialog" aria-label="Task Hub">
+  <div class="hub-header">
+    <div class="hub-tabs">
+      <div class="hub-tab active" data-tab="calendar">📅 Calendar</div>
+      <div class="hub-tab" data-tab="resources">🌐 Study Resources</div>
+    </div>
+    <button class="hub-close" id="closeHub">✕</button>
+  </div>
+
+  <div class="hub-body">
+    <!-- Calendar Column -->
+    <div class="left-col">
+      <div class="cal-nav">
+        <button id="prevMonth" class="small btn">◀</button>
+        <div id="calMonthLabel" style="font-weight:900; color:var(--accent-color)"></div>
+        <button id="nextMonth" class="small btn">▶</button>
+        <div style="margin-left:auto; color:var(--muted); font-size:13px">Dots: pink = personal · blue = task</div>
+      </div>
+
+      <div id="calGrid" class="cal-grid" aria-hidden="false"></div>
+
+      <div style="margin-top:12px">
+        <div style="font-weight:800; margin-bottom:6px">Items for selected date</div>
+        <div id="eventsForDate" class="events-list"></div>
+      </div>
+    </div>
+
+    <!-- Resources Column -->
+    <div class="right-col">
+      <div id="resourcesTab">
+        <div style="font-weight:900; margin-bottom:6px">🌐 Study Resources (Grades 7–12)</div>
+        <div style="color:var(--muted); margin-bottom:8px">Click a subject, then a grade — links open in a new tab.</div>
+        <div id="resourcesList" class="resources"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* -------------------------
+  Storage keys & helpers
+   ------------------------- */
+const EVENTS_KEY = 'studyhub_events_v4';
+const TODOS_KEY = 'studyhub_todos_v4';
+const THEME_KEY = 'studyhub_theme_v2';
+const CUSTOM_KEY = 'studyhub_custom_v2';
+
+function loadEvents(){ try{ return JSON.parse(localStorage.getItem(EVENTS_KEY) || '[]'); }catch(e){return [];} }
+function saveEvents(arr){ localStorage.setItem(EVENTS_KEY, JSON.stringify(arr)); }
+function loadTodos(){ try{ return JSON.parse(localStorage.getItem(TODOS_KEY) || '[]'); }catch(e){return [];} }
+function saveTodos(arr){ localStorage.setItem(TODOS_KEY, JSON.stringify(arr)); }
+function saveTheme(idx){ localStorage.setItem(THEME_KEY, String(idx)); }
+function loadTheme(){ return parseInt(localStorage.getItem(THEME_KEY) || '0', 10); }
+function saveCustom(obj){ localStorage.setItem(CUSTOM_KEY, JSON.stringify(obj)); }
+function loadCustom(){ try{ return JSON.parse(localStorage.getItem(CUSTOM_KEY)||'{}'); }catch(e){return {}; } }
+
+/* -------------------------
+  THEMES (no full-black)
+   - 0: Pink+Blue (default)
+   - 1: Gender-Neutral
+   - 2: Dark Mode
+   - 3: Full White
+   - 4: Custom (auto-open)
+  ------------------------- */
+const THEMES = [
+  { name: 'Pastel Pink & Blue', vars:{
+    '--bg':'#fdf6fb','--panel-bg':'#fff9fb','--button-color':'#ffccdf','--accent-color':'#ff8fb3',
+    '--pastel-pink':'#ffd7e6','--pastel-blue':'#d7eefc','--blue-strong':'#9fd2ff','--muted':'#6e6068','--text':'#332f33'
+  }},
+  { name: 'Gender Neutral', vars:{
+    '--bg':'#f6fff6','--panel-bg':'#fbfff7','--button-color':'#c8f7d4','--accent-color':'#5fc08a',
+    '--pastel-pink':'#dbfbe0','--pastel-blue':'#f9f6e6','--blue-strong':'#8bd39a','--muted':'#6b7164','--text':'#274437'
+  }},
+  { name: 'Dark Mode', vars:{
+    '--bg':'#1f1f23','--panel-bg':'#2a2a2f','--button-color':'#6e5b79','--accent-color':'#a88bb5',
+    '--pastel-pink':'#2b2130','--pastel-blue':'#283041','--blue-strong':'#6b8fb1','--muted':'#bfb8c2','--text':'#e6e6ea'
+  }},
+  { name: 'Full White', vars:{
+    '--bg':'#ffffff','--panel-bg':'#ffffff','--button-color':'#f2f2f2','--accent-color':'#000000',
+    '--pastel-pink':'#ffffff','--pastel-blue':'#ffffff','--blue-strong':'#000000','--muted':'#6e6e6e','--text':'#000000'
+  }},
+  { name: 'Custom', vars:{} }
+];
+
+let currentThemeIndex = loadTheme() || 0;
+
+/* Apply theme variables to :root */
+function applyTheme(idx){
+  currentThemeIndex = idx;
+  saveTheme(idx);
+  const root = document.documentElement;
+  if(idx >= 0 && idx < THEMES.length-1){
+    const vars = THEMES[idx].vars;
+    for(const k in vars) root.style.setProperty(k, vars[k]);
+    hideCustomPanel();
+    showThemeToast(`Theme: ${THEMES[idx].name}`);
+  } else if(idx === THEMES.length-1){
+    // Custom
+    const custom = loadCustom();
+    const defaults = custom && Object.keys(custom).length ? custom : {
+      bg:'#ffffff', text:'#111111', btn:'#ffccdf', accent:'#ff8fb3'
+    };
+    root.style.setProperty('--bg', defaults.bg);
+    root.style.setProperty('--text', defaults.text);
+    root.style.setProperty('--button-color', defaults.btn);
+    root.style.setProperty('--accent-color', defaults.accent);
+    root.style.setProperty('--pastel-pink', lightenColor(defaults.accent, 0.7));
+    root.style.setProperty('--pastel-blue', lightenColor(defaults.btn, 0.6));
+    root.style.setProperty('--panel-bg', lightenColor(defaults.bg, 0.04));
+    root.style.setProperty('--muted', '#6e616a');
+    root.style.setProperty('--blue-strong', defaults.btn);
+    showCustomPanel();
+    showThemeToast(`Theme: Custom`);
+  }
+}
+
+/* Helper: lighten hex color by factor (0..1) */
+function lightenColor(hex, factor){
+  try {
+    hex = hex.replace('#','');
+    if(hex.length===3) hex = hex.split('').map(c=>c+c).join('');
+    const r = parseInt(hex.substr(0,2),16);
+    const g = parseInt(hex.substr(2,2),16);
+    const b = parseInt(hex.substr(4,2),16);
+    const nr = Math.round(r + (255-r)*factor);
+    const ng = Math.round(g + (255-g)*factor);
+    const nb = Math.round(b + (255-b)*factor);
+    return `rgb(${nr},${ng},${nb})`;
+  } catch(e){
+    return hex;
+  }
+}
+
+/* Theme toast */
+let toastTimer = null;
+function showThemeToast(text){
+  const t = document.getElementById('themeToast');
+  t.textContent = text;
+  t.style.opacity = '1';
+  t.style.transform = 'translateY(0)';
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> {
+    t.style.opacity = '0';
+    t.style.transform = 'translateY(-6px)';
+  }, 1700);
+}
+
+/* Cycle theme on button */
+document.getElementById('themeBtn').addEventListener('click', ()=>{
+  let next = (currentThemeIndex + 1) % THEMES.length;
+  applyTheme(next);
+});
+
+/* Custom panel functions */
+const customPanel = document.getElementById('customPanel');
+function showCustomPanel(){
+  const custom = loadCustom();
+  document.getElementById('customBg').value = custom.bg || '#ffffff';
+  document.getElementById('customText').value = custom.text || '#111111';
+  document.getElementById('customBtn').value = custom.btn || '#ffccdf';
+  document.getElementById('customAccent').value = custom.accent || '#ff8fb3';
+  customPanel.style.display = 'block';
+  customPanel.setAttribute('aria-hidden','false');
+}
+function hideCustomPanel(){
+  customPanel.style.display = 'none';
+  customPanel.setAttribute('aria-hidden','true');
+}
+
+/* custom live preview */
+['customBg','customText','customBtn','customAccent'].forEach(id=>{
+  const el = document.getElementById(id);
+  el.addEventListener('input', ()=>{
+    const bg = document.getElementById('customBg').value;
+    const txt = document.getElementById('customText').value;
+    const btn = document.getElementById('customBtn').value;
+    const acc = document.getElementById('customAccent').value;
+    const root = document.documentElement;
+    root.style.setProperty('--bg', bg);
+    root.style.setProperty('--text', txt);
+    root.style.setProperty('--button-color', btn);
+    root.style.setProperty('--accent-color', acc);
+    root.style.setProperty('--pastel-pink', lightenColor(acc, 0.7));
+    root.style.setProperty('--pastel-blue', lightenColor(btn, 0.6));
+  });
+});
+document.getElementById('saveCustom').addEventListener('click', ()=>{
+  const custom = {
+    bg: document.getElementById('customBg').value,
+    text: document.getElementById('customText').value,
+    btn: document.getElementById('customBtn').value,
+    accent: document.getElementById('customAccent').value
+  };
+  saveCustom(custom);
+  showThemeToast('Custom theme saved');
+  hideCustomPanel();
+});
+document.getElementById('cancelCustom').addEventListener('click', ()=> hideCustomPanel());
+
+/* initialize theme on load */
+applyTheme(loadTheme());
+
+/* -------------------------
+  TIMERS (accurate across tabs)
+   ------------------------- */
+// Pomodoro main
+let mainState = {
+  running: false,
+  phase: 'study', // 'study' or 'break'
+  studyDuration: 25*60,
+  breakDuration: 5*60,
+  endTs: null // ms timestamp
+};
+
+const mainTimerEl = document.getElementById('mainTimer');
+const phaseLabel = document.getElementById('phaseLabel');
+const mainToggle = document.getElementById('mainToggle');
+const mainResetBtn = document.getElementById('mainReset');
+const mainPresetBtn = document.getElementById('mainPreset');
+
+function formatTime(s){
+  if(s < 0) s = 0;
+  const m = Math.floor(s/60), sec = Math.floor(s%60);
+  return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+
+function updateMainDisplay(){
+  let remaining;
+  if(mainState.running && mainState.endTs){
+    remaining = Math.ceil((mainState.endTs - Date.now())/1000);
+  } else {
+    remaining = mainState.phase === 'study' ? mainState.studyDuration : mainState.breakDuration;
+  }
+  mainTimerEl.textContent = formatTime(remaining);
+  phaseLabel.textContent = mainState.phase === 'study' ? 'Study' : 'Break';
+}
+
+function startMain(){
+  if(!mainState.endTs){
+    const dur = mainState.phase === 'study' ? mainState.studyDuration : mainState.breakDuration;
+    mainState.endTs = Date.now() + dur*1000;
+  }
+  mainState.running = true;
+  mainToggle.textContent = 'Pause';
+}
+function pauseMain(){
+  if(!mainState.running) return;
+  const remaining = Math.ceil((mainState.endTs - Date.now())/1000);
+  if(mainState.phase === 'study') mainState.studyDuration = Math.max(1, remaining);
+  else mainState.breakDuration = Math.max(1, remaining);
+  mainState.endTs = null;
+  mainState.running = false;
+  mainToggle.textContent = 'Start';
+}
+function resetMain(){
+  mainState.phase = 'study';
+  mainState.studyDuration = 25*60;
+  mainState.breakDuration = 5*60;
+  mainState.endTs = null;
+  mainState.running = false;
+  mainToggle.textContent = 'Start';
+  updateMainDisplay();
+}
+function presetMain(){
+  mainState.studyDuration = 25*60;
+  mainState.breakDuration = 5*60;
+  resetMain();
+}
+
+mainToggle.addEventListener('click', ()=>{
+  if(mainState.running) pauseMain();
+  else startMain();
+});
+mainResetBtn.addEventListener('click', resetMain);
+mainPresetBtn.addEventListener('click', presetMain);
+
+// tick
+setInterval(()=>{
+  if(mainState.running && mainState.endTs){
+    let rem = Math.ceil((mainState.endTs - Date.now())/1000);
+    if(rem <= 0){
+      // swap phases
+      if(mainState.phase === 'study'){
+        mainState.phase = 'break';
+        mainState.endTs = Date.now() + mainState.breakDuration*1000;
+        alert('✅ Study complete — take a 5 minute break!');
+      } else {
+        mainState.phase = 'study';
+        mainState.endTs = Date.now() + mainState.studyDuration*1000;
+        alert('📚 Break over — back to study!');
+      }
+    }
+  }
+  updateMainDisplay();
+}, 500);
+
+// Subject timer
+let subjectState = { running:false, endTs:null, duration:30*60 };
+const subjectTimerEl = document.getElementById('subjectTimer');
+function startSubjectTimer(seconds){
+  subjectState.duration = seconds;
+  subjectState.endTs = Date.now() + seconds*1000;
+  subjectState.running = true;
+}
+document.getElementById('subjectReset').addEventListener('click', ()=>{
+  subjectState.running = false; subjectState.endTs = null; subjectTimerEl.textContent = formatTime(subjectState.duration);
+});
+setInterval(()=>{
+  if(subjectState.running && subjectState.endTs){
+    const rem = Math.ceil((subjectState.endTs - Date.now())/1000);
+    if(rem <= 0){ subjectState.running=false; subjectState.endTs=null; alert('Subject timer finished!'); }
+    else subjectTimerEl.textContent = formatTime(rem);
+  } else subjectTimerEl.textContent = formatTime(subjectState.duration);
+}, 500);
+
+/* -------------------------
+  Panels open/close + To-Do page logic
+   ------------------------- */
+const todoBtn = document.getElementById('todoBtn');
+const taskHubBtn = document.getElementById('taskHubBtn');
+const todoPage = document.getElementById('todoPage');
+const mainHub = document.getElementById('mainHub');
+const hubPanel = document.getElementById('hubPanel');
+const closeHub = document.getElementById('closeHub');
+const backToHub = document.getElementById('backToHub');
+const hubTabs = document.querySelectorAll('.hub-tab');
+
+todoBtn.addEventListener('click', ()=>{
+  // show To-Do page view (hide main hub & hub panel)
+  mainHub.style.display = 'none';
+  hubPanel.style.display = 'none';
+  todoPage.style.display = 'block';
+  // refresh tasks
+  refreshTodos();
+});
+backToHub.addEventListener('click', ()=>{
+  // return to main hub
+  todoPage.style.display = 'none';
+  mainHub.style.display = 'flex';
+  refreshTodos();
+});
+
+taskHubBtn.addEventListener('click', ()=>{
+  hubPanel.style.display = hubPanel.style.display === 'block' ? 'none' : 'block';
+  // hide todo page if open
+  if(todoPage.style.display === 'block') todoPage.style.display = 'none';
+});
+closeHub.addEventListener('click', ()=> hubPanel.style.display = 'none');
+
+hubTabs.forEach(t => t.addEventListener('click', ()=>{
+  hubTabs.forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  showHubTab(t.dataset.tab);
+}));
+function showHubTab(name){
+  if(name === 'calendar'){
+    document.querySelector('.left-col').style.display = 'block';
+    document.querySelector('.right-col').style.display = 'block';
+  } else if(name === 'resources'){
+    document.querySelector('.left-col').style.display = 'none';
+    document.querySelector('.right-col').style.display = 'block';
+  }
+}
+
+/* -------------------------
+  Calendar implementation
+   ------------------------- */
+let viewYear, viewMonth; // 0-index month
+const calGrid = document.getElementById('calGrid');
+const calMonthLabel = document.getElementById('calMonthLabel');
+const eventsForDateEl = document.getElementById('eventsForDate');
+
+function initCalendar(){
+  const now = new Date();
+  viewYear = now.getFullYear();
+  viewMonth = now.getMonth();
+  renderCalendar();
+}
+
+document.getElementById('prevMonth').addEventListener('click', ()=>{
+  viewMonth--; if(viewMonth < 0){ viewMonth = 11; viewYear--; } renderCalendar();
+});
+document.getElementById('nextMonth').addEventListener('click', ()=>{
+  viewMonth++; if(viewMonth > 11){ viewMonth = 0; viewYear++; } renderCalendar();
+});
+
+function renderCalendar(){
+  calGrid.innerHTML = '';
+  calMonthLabel.textContent = new Date(viewYear, viewMonth).toLocaleString(undefined, { month:'long', year:'numeric' });
+
+  // weekday headers
+  const wk = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  for(let i=0;i<7;i++){
+    const hd = document.createElement('div'); hd.style.fontWeight='800'; hd.style.color='var(--muted)'; hd.style.padding='6px 4px'; hd.textContent = wk[i];
+    calGrid.appendChild(hd);
+  }
+
+  const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+  const daysInMonth = new Date(viewYear, viewMonth+1, 0).getDate();
+  const daysPrev = new Date(viewYear, viewMonth, 0).getDate();
+
+  // previous month tail
+  for(let i=0;i<firstDay;i++){
+    const dnum = daysPrev - (firstDay - 1 - i);
+    const cell = makeCalDayCell(viewYear, viewMonth - 1, dnum, true);
+    calGrid.appendChild(cell);
+  }
+  // current month
+  for(let d=1; d<=daysInMonth; d++){
+    const cell = makeCalDayCell(viewYear, viewMonth, d, false);
+    calGrid.appendChild(cell);
+  }
+  // fill remaining
+  const totalNow = 7 + firstDay + daysInMonth;
+  const remainder = (7 - (totalNow % 7)) % 7;
+  for(let i=0;i<remainder;i++){
+    const cell = makeCalDayCell(viewYear, viewMonth + 1, i+1, true);
+    calGrid.appendChild(cell);
+  }
+
+  // reset events panel
+  eventsForDateEl.innerHTML = '<div class="small-note" style="color:var(--muted)">Select a date to see items & add events.</div>';
+}
+
+function makeCalDayCell(y, m, d, inactive){
+  const wrapper = document.createElement('div');
+  wrapper.className = 'cal-day' + (inactive ? ' inactive' : '');
+  const dateNum = document.createElement('div'); dateNum.className='date-num'; dateNum.textContent = d;
+  wrapper.appendChild(dateNum);
+
+  // dots
+  const dotRow = document.createElement('div'); dotRow.className='dot-row';
+  const key = dateToKey(new Date(y, m, d));
+  const evts = loadEvents().filter(e => e.date === key);
+  const hasPersonal = evts.some(e => e.type === 'personal');
+  const hasTask = evts.some(e => e.type === 'task');
+  if(hasPersonal){ const dot = document.createElement('div'); dot.className='dot personal'; dotRow.appendChild(dot); }
+  if(hasTask){ const dot = document.createElement('div'); dot.className='dot task'; dotRow.appendChild(dot); }
+  wrapper.appendChild(dotRow);
+
+  // click selects date
+  wrapper.addEventListener('click', ()=> openDatePanel(y, m, d));
+  return wrapper;
+}
+
+function dateToKey(date){
+  const y = date.getFullYear();
+  const m = String(date.getMonth()+1).padStart(2,'0');
+  const d = String(date.getDate()).padStart(2,'0');
+  return `${y}-${m}-${d}`;
+}
+
+function openDatePanel(y, m, d){
+  const key = dateToKey(new Date(y, m, d));
+  const evts = loadEvents().filter(e => e.date === key);
+  const todos = loadTodos().filter(t => t.due === key);
+  eventsForDateEl.innerHTML = '';
+
+  const hdr = document.createElement('div'); hdr.style.fontWeight='800'; hdr.style.marginBottom='8px'; hdr.textContent = `Items on ${key}`;
+  eventsForDateEl.appendChild(hdr);
+
+  // show tasks due that day (from todos)
+  if(todos.length){
+    todos.forEach((t, i) => {
+      const div = document.createElement('div'); div.className='event-item';
+      div.innerHTML = `<div style="font-weight:700">${t.title} <span style="font-size:12px;color:var(--muted)"> (To-Do)</span></div>`;
+      const ch = document.createElement('button'); ch.textContent = 'Mark Done';
+      ch.style.float='right';
+      ch.onclick = ()=> {
+        // remove todo and corresponding calendar 'task' events (if any)
+        const all = loadTodos(); const idx = all.findIndex(x=>x.id===t.id);
+        if(idx>-1) all.splice(idx,1); saveTodos(all);
+        // remove corresponding events with type 'task' and title match on that date
+        let ev = loadEvents().filter(e => !(e.date === key && e.type === 'task' && e.title === t.title));
+        saveEvents(ev);
+        refreshTodos(); renderCalendar(); openDatePanel(y,m,d);
+      };
+      div.appendChild(ch);
+      eventsForDateEl.appendChild(div);
+    });
+  }
+
+  // show personal events
+  if(evts.length){
+    evts.forEach((e, idx) => {
+      const div = document.createElement('div'); div.className='event-item';
+      div.innerHTML = `<div style="font-weight:800">${e.title}</div><div style="color:var(--muted);font-size:13px">${e.type} · ${e.note||''}</div>`;
+      const rem = document.createElement('button'); rem.textContent='Remove'; rem.style.float='right';
+      rem.onclick = ()=> {
+        let all = loadEvents(); all = all.filter(x => x.id !== e.id); saveEvents(all);
+        renderCalendar(); openDatePanel(y,m,d);
+      };
+      div.appendChild(rem);
+      eventsForDateEl.appendChild(div);
+    });
+  }
+
+  // add form
+  const form = document.createElement('div'); form.style.marginTop='8px';
+  form.innerHTML = `
+    <input id="evTitle" type="text" placeholder="Event title" style="margin-bottom:8px;padding:8px;border-radius:8px;border:1px solid rgba(0,0,0,0.06);width:100%" />
+    <select id="evType" style="margin-bottom:8px;padding:8px;border-radius:8px;border:1px solid rgba(0,0,0,0.06);width:100%">
+      <option value="personal">Personal</option>
+      <option value="task">Task (will show on To-Do)</option>
+    </select>
+    <input id="evNote" type="text" placeholder="Optional note" style="margin-bottom:8px;padding:8px;border-radius:8px;border:1px solid rgba(0,0,0,0.06);width:100%" />
+    <div style="display:flex; gap:8px">
+      <button id="addEvtBtn" class="btn">Add Event</button>
+      <button id="closeEvtBtn" class="ghost small">Close</button>
+    </div>
+  `;
+  eventsForDateEl.appendChild(form);
+
+  document.getElementById('closeEvtBtn').addEventListener('click', ()=> {
+    eventsForDateEl.innerHTML = '';
+  });
+  document.getElementById('addEvtBtn').addEventListener('click', ()=> {
+    const title = document.getElementById('evTitle').value.trim();
+    const type = document.getElementById('evType').value;
+    const note = document.getElementById('evNote').value.trim();
+    if(!title) return alert('Enter a title for the event');
+    const eall = loadEvents();
+    const newEvt = { id: 'evt_' + Date.now() + '_' + Math.floor(Math.random()*999), date: key, title, type, note };
+    eall.push(newEvt);
+    saveEvents(eall);
+    // if user created a type 'task', also add to todos (if not exist)
+    if(type === 'task'){
+      const todos = loadTodos();
+      const exists = todos.some(t => t.title === title && t.due === key);
+      if(!exists){
+        todos.push({ id: 'td_' + Date.now(), title, due: key });
+        saveTodos(todos);
+        refreshTodos();
+      }
+    }
+    renderCalendar(); openDatePanel(y,m,d);
+  });
+}
+
+/* -------------------------
+  To-Do logic (separate page)
+   ------------------------- */
+function refreshTodos(){
+  const list = document.getElementById('todoList');
+  const todos = loadTodos();
+  list.innerHTML = '';
+  if(todos.length === 0){
+    const n = document.createElement('div'); n.style.color = 'var(--muted)'; n.textContent = 'No tasks yet — add one above.';
+    list.appendChild(n); return;
+  }
+  todos.forEach((t, idx) => {
+    const item = document.createElement('div'); item.className = 'todo-item';
+    const left = document.createElement('div'); left.style.display='flex'; left.style.gap='8px'; left.style.alignItems='center';
+    const chk = document.createElement('input'); chk.type='checkbox'; chk.style.transform='scale(1.1)';
+    chk.checked = false;
+    chk.addEventListener('change', ()=>{
+      if(chk.checked){
+        // mark done — remove todo and the calendar task event if exists
+        const all = loadTodos(); all.splice(idx,1); saveTodos(all);
+        let evs = loadEvents().filter(e => !(e.type === 'task' && e.title === t.title && e.date === t.due));
+        saveEvents(evs);
+        refreshTodos(); renderCalendar();
+      }
+    });
+    const titleDiv = document.createElement('div'); titleDiv.className='title'; titleDiv.textContent = t.title;
+    const meta = document.createElement('div'); meta.className='meta'; meta.textContent = t.due ? `Due ${t.due}` : '';
+    left.appendChild(chk); left.appendChild(titleDiv); left.appendChild(meta);
+
+    const right = document.createElement('div');
+    const del = document.createElement('button'); del.textContent = 'Delete'; del.className='btn small';
+    del.onclick = ()=> {
+      const all = loadTodos(); all.splice(idx,1); saveTodos(all);
+      // remove calendar event if exists
+      let ev = loadEvents().filter(e => !(e.type === 'task' && e.title === t.title && e.date === t.due));
+      saveEvents(ev);
+      refreshTodos(); renderCalendar();
+    };
+    right.appendChild(del);
+    item.appendChild(left); item.appendChild(right);
+    list.appendChild(item);
+  });
+}
+
+function addTodo(){
+  const txt = document.getElementById('todoText').value.trim();
+  const due = document.getElementById('todoDue').value || null;
+  if(!txt) return alert('Enter a task title');
+  const todos = loadTodos();
+  const id = 'td_' + Date.now();
+  todos.push({ id, title: txt, due });
+  saveTodos(todos);
+  // if due date provided, also add calendar event of type 'task' (for blue dot)
+  if(due){
+    const evs = loadEvents();
+    const exists = evs.some(e => e.type === 'task' && e.title === txt && e.date === due);
+    if(!exists){
+      evs.push({ id: 'evt_' + Date.now(), date: due, title: txt, type: 'task', note: 'From To-Do' });
+      saveEvents(evs);
+    }
+    renderCalendar();
+  }
+  document.getElementById('todoText').value = '';
+  document.getElementById('todoDue').value = '';
+  refreshTodos();
+}
+
+/* -------------------------
+  Resources (pre-filled)
+   ------------------------- */
+const resourcesData = {
+  "Math": {
+    "7":"https://www.khanacademy.org/math",
+    "8":"https://www.khanacademy.org/math",
+    "9":"https://www.khanacademy.org/math/algebra",
+    "10":"https://www.khanacademy.org/math/algebra",
+    "11":"https://www.khanacademy.org/math/geometry",
+    "12":"https://www.khanacademy.org/math/precalculus"
+  },
+  "Science":{
+    "7":"https://www.ck12.org/student/",
+    "8":"https://www.ck12.org/student/",
+    "9":"https://www.khanacademy.org/science/biology",
+    "10":"https://www.khanacademy.org/science/chemistry",
+    "11":"https://www.khanacademy.org/science/physics",
+    "12":"https://www.nasa.gov/stem"
+  },
+  "ELA":{
+    "7":"https://www.commonlit.org/",
+    "8":"https://www.commonlit.org/",
+    "9":"https://www.khanacademy.org/reading",
+    "10":"https://owl.purdue.edu/",
+    "11":"https://owl.purdue.edu/",
+    "12":"https://owl.purdue.edu/"
+  },
+  "History":{
+    "7":"https://www.youtube.com/c/crashcourse",
+    "8":"https://www.youtube.com/c/crashcourse",
+    "9":"https://www.smithsonianmag.com/history/",
+    "10":"https://www.digitalhistory.uh.edu/",
+    "11":"https://www.digitalhistory.uh.edu/",
+    "12":"https://www.history.com/"
+  }
+};
+
+function renderResources(){
+  const container = document.getElementById('resourcesList');
+  container.innerHTML = '';
+  Object.keys(resourcesData).forEach(subj=>{
+    const sdiv = document.createElement('div'); sdiv.className='subject';
+    const title = document.createElement('div'); title.style.fontWeight='900'; title.textContent = subj;
+    sdiv.appendChild(title);
+    const row = document.createElement('div'); row.className='grade-row';
+    for(let g=7; g<=12; g++){
+      const btn = document.createElement('button'); btn.className='grade-btn'; btn.textContent = 'Grade ' + g;
+      const link = resourcesData[subj][String(g)];
+      btn.addEventListener('click', ()=> window.open(link, '_blank'));
+      row.appendChild(btn);
+    }
+    sdiv.appendChild(row);
+    container.appendChild(sdiv);
+  });
+}
+
+/* -------------------------
+  INIT on load
+   ------------------------- */
+(function init(){
+  initCalendar();
+  renderResources();
+  refreshTodos();
+  renderCalendar();
+  updateMainDisplay();
+})();
+</script>
+
+</body>
+</html>
